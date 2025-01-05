@@ -29,7 +29,8 @@ interface WeatherApiService {
     @GET("data/2.5/weather")
     suspend fun getWeather(
         @Query("q") city: String,
-        @Query("appid") apiKey: String
+        @Query("appid") apiKey: String,
+        @Query("units") units: String = "metric" // Fetch data in Celsius
     ): WeatherResponse
 }
 
@@ -76,8 +77,8 @@ fun WeatherScreen() {
     LaunchedEffect(Unit) {
         scope.launch(Dispatchers.IO) {
             try {
-                // Replace "YourCity" and "YourAPIKey" with actual values
-                val response = RetrofitInstance.api.getWeather("YourCity", "YourAPIKey")
+                // Replace with your city and OpenWeatherMap API key
+                val response = RetrofitInstance.api.getWeather("YourCity", "f61be9a0675aa5c6470d95b2b0ccf7b0")
                 weatherData.value = response
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -90,7 +91,7 @@ fun WeatherScreen() {
         if (weather != null) {
             Text(
                 text = "City: ${weather.name}\n" +
-                        "Temperature: ${weather.main.temp}°K\n" +
+                        "Temperature: ${weather.main.temp}°C\n" +
                         "Description: ${weather.weather[0].description}",
                 modifier = Modifier.padding(16.dp)
             )
@@ -102,7 +103,7 @@ fun WeatherScreen() {
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun WeatherScreenPreview() {
     APIDIscussionTheme {
         WeatherScreen()
     }
