@@ -1,22 +1,59 @@
 package ph.edu.auf.apidiscussion
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import ph.edu.auf.apidiscussion.api.repositories.WeatherRepositories
-import ph.edu.auf.apidiscussion.providers.LocationProvider
-import ph.edu.auf.apidiscussion.screens.WeatherScreen
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import ph.edu.auf.apidiscussion.ui.theme.APIDIscussionTheme
-import ph.edu.auf.apidiscussion.viewmodels.weather.WeatherViewModel
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
+
+// Weather API Service
+interface WeatherApiService {
+    @GET("data/2.5/weather")
+    suspend fun getWeather(
+        @Query("q") city: String,
+        @Query("appid") apiKey: String
+    ): WeatherResponse
+}
+
+// Retrofit Instance
+object RetrofitInstance {
+    private const val BASE_URL = "https://api.openweathermap.org/"
+    val api: WeatherApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(WeatherApiService::class.java)
+    }
+}
+
+// WeatherResponse Data Class
+data class WeatherResponse(
+    val name: String,
+    val main: Main,
+    val weather: List<Weather>
+)
+
+data class Main(val temp: Double)
+data class Weather(val description: String)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,26 +61,49 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             APIDIscussionTheme {
-                WeatherScreen(viewModel = WeatherViewModel(WeatherRepositories(),
-                    LocationProvider(LocalContext.current)
-                ))
+                WeatherScreen()
             }
         }
     }
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
+fun WeatherScreen() {
+    val weatherData = remember { mutableStateOf<WeatherResponse?>(null) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                // Replace "YourCity" and "YourAPIKey" with actual values
+                val response = RetrofitInstance.api.getWeather("YourCity", "YourAPIKey")
+                weatherData.value = response
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    Scaffold {
+        val weather = weatherData.value
+        if (weather != null) {
+            Text(
+                text = "City: ${weather.name}\n" +
+                        "Temperature: ${weather.main.temp}°K\n" +
+                        "Description: ${weather.weather[0].description}",
+                modifier = Modifier.padding(16.dp)
+            )
+        } else {
+            Text(text = "Fetching weather data...", modifier = Modifier.padding(16.dp))
+        }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     APIDIscussionTheme {
-        Greeting("Android")
+        WeatherScreen()
     }
 }
