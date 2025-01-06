@@ -127,7 +127,7 @@ fun WeatherApp() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
+            verticalArrangement = Arrangement.Center, // Center the content vertically
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Underline above search bar
@@ -150,7 +150,8 @@ fun WeatherApp() {
                 placeholder = { Text("Type city name here...") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .padding(8.dp), // Add padding for better spacing
                 trailingIcon = {
                     if (cityInput.value.text.isNotEmpty()) {
                         IconButton(onClick = { cityInput.value = TextFieldValue("") }) {
@@ -239,6 +240,7 @@ fun WeatherApp() {
         }
     }
 }
+
 
 
 @Preview(showBackground = true)
